@@ -7,8 +7,13 @@ const extra = (Constants.expoConfig?.extra ?? {}) as {
 /** Gemini APIキー。.env → app.config.js の extra 経由で受け取る。 */
 export const GEMINI_API_KEY = extra.geminiApiKey ?? '';
 
-/** 使用するGeminiモデル。 */
-export const GEMINI_MODEL = 'gemini-2.5-flash';
+/**
+ * 使用するGeminiモデル。
+ *
+ * 当初は gemini-2.5-flash を予定していたが、2.5系は新規ユーザーへの提供が
+ * 終了しており 404 になるため、後継の 3.6-flash を使う。
+ */
+export const GEMINI_MODEL = 'gemini-3.6-flash';
 
 /** Gemini APIのタイムアウト（ミリ秒）。 */
 export const GEMINI_TIMEOUT_MS = 120_000;

@@ -335,7 +335,7 @@ flowchart LR
 | 項目 | 内容 |
 | --- | --- |
 | エンドポイント | `POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent` |
-| モデル | `gemini-2.5-flash`（`src/config.ts` で定数化し、変更可能にする） |
+| モデル | `gemini-3.6-flash`（`src/config.ts` で定数化し、変更可能にする） |
 | 認証 | ヘッダー `x-goog-api-key: <APIキー>` |
 | 音声の渡し方 | `inline_data`（Base64）。3分でも上限20MBに収まるため Files API は使わない |
 | MIMEタイプ | `audio/mp4` |
@@ -576,7 +576,7 @@ sequenceDiagram
 | 4 | イラスト素材 | デザイン画像から切り出してPNG化 | AC-02（目視比較）の再現度が最も高い |
 | 5 | 要約の見出し | Markdown保存＋自作の簡易レンダラー | 保存形式が単純な文字列のままで済み、FN-10も満たせる。外部ライブラリ不要 |
 | 6 | エラー表示 | `Alert.alert` | エラーは例外パス。実装コストゼロで確実に伝わる |
-| 7 | Geminiモデル | `gemini-2.5-flash` | 音声入力対応・要約品質と無料枠のバランス。モデル名は定数化し変更可能に |
+| 7 | Geminiモデル | `gemini-3.6-flash` | 当初は `gemini-2.5-flash` を選定したが、2.5系（lite含む）は新規ユーザーへの提供が終了しており 404 になることが疎通確認で判明したため、後継の 3.6-flash に変更。音声入力・構造化出力ともに動作を確認済み。モデル名は定数化し変更可能にしてある |
 | 8 | 処理中表示 | 録音画面のレイアウトを流用 | 画面を追加せず状態切り替えで実現するという要件 5.1 に合致 |
 | 9 | 状態管理 | React Context + hooks | 共有状態は記録一覧のみ。ライブラリ導入は過剰 |
 | 10 | 実行形態 | Expo Go | 使用ライブラリが全て同梱。開発ビルド不要 |
