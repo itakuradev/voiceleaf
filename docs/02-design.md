@@ -35,8 +35,8 @@
 | ファイル操作 | expo-file-system | 一時音声のBase64化・削除 |
 | 通信確認 | expo-network | 録音開始前の接続確認（FN-02） |
 | 永続化 | @react-native-async-storage/async-storage | 記録は単一コレクション・検索なし。SQLiteは過剰 |
-| スワイプ削除 | react-native-gesture-handler (`ReanimatedSwipeable`) | 左スワイプでゴミ箱ボタン表示（FN-14） |
-| アニメーション | react-native-reanimated | 録音中の波形・処理中スピナー |
+| スワイプ削除 | react-native-gesture-handler (`Swipeable`) | 左スワイプでゴミ箱ボタン表示（FN-14）。Animated ベースの実装を使う |
+| アニメーション | React Native 標準の `Animated` API | 録音中の波形・処理中スピナー。reanimated は使用しない（12章 #17） |
 | AI | Gemini API `gemini-2.5-flash`（REST直接呼び出し） | 音声入力対応・無料枠内。SDKを挟まず `fetch` で呼ぶ |
 | アイコン | @expo/vector-icons | マイク・ゴミ箱・矢印等 |
 
@@ -282,7 +282,7 @@ export type Recording = {
 | 戻るボタン | 画面左上に配置。詳細画面（SCR-03）と同一のスタイル・サイズ・位置とする |
 | 経過時間 | `mm:ss` 形式。100ms間隔のタイマーで更新し、表示は秒単位 |
 | 自動終了 | 経過180秒で `stop()` を自動実行（FN-06） |
-| 波形 | 実音量には連動させず、Reanimated の繰り返しアニメーションで表現（デザイン再現目的） |
+| 波形 | 実音量には連動させず、`Animated.loop` による繰り返しアニメーションで表現（デザイン再現目的） |
 | 中断操作 | 戻るボタン・Androidバックキーのどちらでも中断できる。**両者は同一の処理を呼ぶ**（録音停止 → 一時ファイル削除 → 保存せずトップへ戻る） |
 | processing表示 | 見出しを「要約しています」に、マイクアイコンをスピナーに、戻るボタンと下部ボタンを非表示に切り替え。同心円装飾は維持 |
 
@@ -335,7 +335,7 @@ flowchart LR
 | 項目 | 内容 |
 | --- | --- |
 | エンドポイント | `POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent` |
-| モデル | `gemini-2.5-flash`（`src/config.ts` で定数化し、変更可能にする） |
+| モデル | `gemini-3.6-flash`（`src/config.ts` で定数化し、変更可能にする） |
 | 認証 | ヘッダー `x-goog-api-key: <APIキー>` |
 | 音声の渡し方 | `inline_data`（Base64）。3分でも上限20MBに収まるため Files API は使わない |
 | MIMEタイプ | `audio/mp4` |
@@ -576,7 +576,7 @@ sequenceDiagram
 | 4 | イラスト素材 | デザイン画像から切り出してPNG化 | AC-02（目視比較）の再現度が最も高い |
 | 5 | 要約の見出し | Markdown保存＋自作の簡易レンダラー | 保存形式が単純な文字列のままで済み、FN-10も満たせる。外部ライブラリ不要 |
 | 6 | エラー表示 | `Alert.alert` | エラーは例外パス。実装コストゼロで確実に伝わる |
-| 7 | Geminiモデル | `gemini-2.5-flash` | 音声入力対応・要約品質と無料枠のバランス。モデル名は定数化し変更可能に |
+| 7 | Geminiモデル | `gemini-3.6-flash` | 当初は `gemini-2.5-flash` を選定したが、2.5系（lite含む）は新規ユーザーへの提供が終了しており 404 になることが疎通確認で判明したため、後継の 3.6-flash に変更。音声入力・構造化出力ともに動作を確認済み。モデル名は定数化し変更可能にしてある |
 | 8 | 処理中表示 | 録音画面のレイアウトを流用 | 画面を追加せず状態切り替えで実現するという要件 5.1 に合致 |
 | 9 | 状態管理 | React Context + hooks | 共有状態は記録一覧のみ。ライブラリ導入は過剰 |
 | 10 | 実行形態 | Expo Go | 使用ライブラリが全て同梱。開発ビルド不要 |
@@ -586,6 +586,7 @@ sequenceDiagram
 | 14 | 録音画面の中断手段 | 左上に戻るボタン「←」を配置（SCR-03と同一スタイル） | デザイン画像には無いが、画面上に中断手段が見えないのはユーザビリティ上の問題となるため追加する |
 | 15 | 詳細画面の三点リーダー | 配置しない | 対応する機能が要件に存在せず、押しても何も起きないボタンになるため |
 | 16 | 詳細画面の「詳細」タイトル | 配置しない | 直下にタイトル・日時・要約が並ぶため冗長 |
+| 17 | react-native-reanimated | 使用しない（依存から除去） | Expo Go (SDK 57) 上でアプリ起動と同時にJSスレッドが SIGSEGV クラッシュするため。`libworklets.so` が原因で、gesture-handler の有無やBabel設定とは無関係に再現した。アニメーションは標準の `Animated` API で代替する（12章 #11 のとおり波形は装飾目的のため実用上の差はない） |
 
 ---
 
