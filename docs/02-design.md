@@ -35,8 +35,8 @@
 | ファイル操作 | expo-file-system | 一時音声のBase64化・削除 |
 | 通信確認 | expo-network | 録音開始前の接続確認（FN-02） |
 | 永続化 | @react-native-async-storage/async-storage | 記録は単一コレクション・検索なし。SQLiteは過剰 |
-| スワイプ削除 | react-native-gesture-handler (`ReanimatedSwipeable`) | 左スワイプでゴミ箱ボタン表示（FN-14） |
-| アニメーション | react-native-reanimated | 録音中の波形・処理中スピナー |
+| スワイプ削除 | react-native-gesture-handler (`Swipeable`) | 左スワイプでゴミ箱ボタン表示（FN-14）。Animated ベースの実装を使う |
+| アニメーション | React Native 標準の `Animated` API | 録音中の波形・処理中スピナー。reanimated は使用しない（12章 #17） |
 | AI | Gemini API `gemini-2.5-flash`（REST直接呼び出し） | 音声入力対応・無料枠内。SDKを挟まず `fetch` で呼ぶ |
 | アイコン | @expo/vector-icons | マイク・ゴミ箱・矢印等 |
 
@@ -282,7 +282,7 @@ export type Recording = {
 | 戻るボタン | 画面左上に配置。詳細画面（SCR-03）と同一のスタイル・サイズ・位置とする |
 | 経過時間 | `mm:ss` 形式。100ms間隔のタイマーで更新し、表示は秒単位 |
 | 自動終了 | 経過180秒で `stop()` を自動実行（FN-06） |
-| 波形 | 実音量には連動させず、Reanimated の繰り返しアニメーションで表現（デザイン再現目的） |
+| 波形 | 実音量には連動させず、`Animated.loop` による繰り返しアニメーションで表現（デザイン再現目的） |
 | 中断操作 | 戻るボタン・Androidバックキーのどちらでも中断できる。**両者は同一の処理を呼ぶ**（録音停止 → 一時ファイル削除 → 保存せずトップへ戻る） |
 | processing表示 | 見出しを「要約しています」に、マイクアイコンをスピナーに、戻るボタンと下部ボタンを非表示に切り替え。同心円装飾は維持 |
 
@@ -586,6 +586,7 @@ sequenceDiagram
 | 14 | 録音画面の中断手段 | 左上に戻るボタン「←」を配置（SCR-03と同一スタイル） | デザイン画像には無いが、画面上に中断手段が見えないのはユーザビリティ上の問題となるため追加する |
 | 15 | 詳細画面の三点リーダー | 配置しない | 対応する機能が要件に存在せず、押しても何も起きないボタンになるため |
 | 16 | 詳細画面の「詳細」タイトル | 配置しない | 直下にタイトル・日時・要約が並ぶため冗長 |
+| 17 | react-native-reanimated | 使用しない（依存から除去） | Expo Go (SDK 57) 上でアプリ起動と同時にJSスレッドが SIGSEGV クラッシュするため。`libworklets.so` が原因で、gesture-handler の有無やBabel設定とは無関係に再現した。アニメーションは標準の `Animated` API で代替する（12章 #11 のとおり波形は装飾目的のため実用上の差はない） |
 
 ---
 
