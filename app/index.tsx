@@ -1,146 +1,127 @@
-import { useAudioRecorder, useAudioRecorderState } from 'expo-audio';
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useCallback } from 'react';
+import { Alert, FlatList, Image, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {
-  deleteRecordingFile,
-  ensureRecordingPermission,
-  getRecordingSize,
-  prepareAudioMode,
-  readRecordingAsBase64,
-  RECORDING_OPTIONS,
-} from '@/services/audio';
-import { generateSummary } from '@/services/gemini';
+import { MicButton } from '@/components/MicButton';
+import { RecordingListItem } from '@/components/RecordingListItem';
+import { useRecordings } from '@/contexts/RecordingsContext';
+import { ensureRecordingPermission } from '@/services/audio';
+import { isOnline } from '@/services/network';
+import { colors } from '@/theme/colors';
+import { layout } from '@/theme/layout';
+import { typography } from '@/theme/typography';
 
-/**
- * ステップ2〜3（録音とGemini API疎通）の検証用の暫定画面。
- * ステップ5でトップ画面（SCR-01）に差し替える。
- */
+/** SCR-01 トップ画面。 */
 export default function TopScreen() {
-  const recorder = useAudioRecorder(RECORDING_OPTIONS);
-  const state = useAudioRecorderState(recorder);
-  const [logs, setLogs] = useState<string[]>([]);
-  const [lastUri, setLastUri] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const router = useRouter();
+  const { recordings, isLoading, remove } = useRecordings();
 
-  const log = useCallback((message: string) => {
-    const time = new Date().toLocaleTimeString('ja-JP');
-    setLogs((prev) => [`${time}  ${message}`, ...prev]);
-  }, []);
-
-  const start = useCallback(async () => {
-    try {
-      const granted = await ensureRecordingPermission();
-      log(`マイク権限: ${granted ? '許可' : '拒否'}`);
-      if (!granted) return;
-
-      await prepareAudioMode();
-      await recorder.prepareToRecordAsync();
-      recorder.record();
-      log('録音を開始しました');
-    } catch (error) {
-      log(`録音開始に失敗: ${String(error)}`);
+  /** 録音開始前の事前チェック（FN-02, FN-03）。 */
+  const startRecording = useCallback(async () => {
+    if (!(await isOnline())) {
+      Alert.alert(
+        '通信できません',
+        'インターネットに接続されていません。接続を確認してからもう一度お試しください。'
+      );
+      return;
     }
-  }, [log, recorder]);
 
-  const stop = useCallback(async () => {
-    try {
-      await recorder.stop();
-      const uri = recorder.uri;
-      setLastUri(uri);
-      log(`録音を終了。size=${uri ? getRecordingSize(uri) : '不明'} bytes`);
-    } catch (error) {
-      log(`録音停止に失敗: ${String(error)}`);
+    if (!(await ensureRecordingPermission())) {
+      Alert.alert(
+        'マイクを使用できません',
+        'マイクの使用が許可されていません。端末の設定から許可してください。'
+      );
+      return;
     }
-  }, [log, recorder]);
 
-  const summarize = useCallback(async () => {
-    if (!lastUri) return;
-    setBusy(true);
-    try {
-      const started = Date.now();
-      const base64 = await readRecordingAsBase64(lastUri);
-      log(`Base64化 完了 (${base64.length} 文字)。Geminiへ送信します…`);
-
-      const result = await generateSummary(base64);
-      log(`要約 完了 (${((Date.now() - started) / 1000).toFixed(1)}秒)`);
-      log(`title: ${result.title}`);
-      log(`summary: ${result.summary}`);
-    } catch (error) {
-      log(`要約に失敗: ${String(error)}`);
-    } finally {
-      deleteRecordingFile(lastUri);
-      log('一時音声ファイルを削除しました');
-      setLastUri(null);
-      setBusy(false);
-    }
-  }, [lastUri, log]);
-
-  const canSummarize = !!lastUri && !busy && !state.isRecording;
+    router.push('/record');
+  }, [router]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>録音・要約 動作確認</Text>
-      <Text style={styles.status}>
-        {state.isRecording ? '録音中' : '停止中'} / {Math.floor((state.durationMillis ?? 0) / 1000)}秒
-      </Text>
-
-      <View style={styles.row}>
-        <Pressable
-          style={[styles.button, (state.isRecording || busy) && styles.buttonDisabled]}
-          disabled={state.isRecording || busy}
-          onPress={start}>
-          <Text style={styles.buttonLabel}>録音開始</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.button, !state.isRecording && styles.buttonDisabled]}
-          disabled={!state.isRecording}
-          onPress={stop}>
-          <Text style={styles.buttonLabel}>録音終了</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.button, !canSummarize && styles.buttonDisabled]}
-          disabled={!canSummarize}
-          onPress={summarize}>
-          <Text style={styles.buttonLabel}>要約する</Text>
-        </Pressable>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <View style={styles.header}>
+        <Image
+          source={require('../assets/images/leaf-title.png')}
+          style={styles.headerLeaf}
+          resizeMode="contain"
+        />
+        <View style={styles.headerTexts}>
+          <Text style={typography.appTitle}>独り言要約</Text>
+          <Text style={[typography.caption, styles.subtitle]}>
+            話すだけで、頭の中をスッキリ整理。
+          </Text>
+        </View>
       </View>
 
-      {busy && (
-        <View style={styles.busy}>
-          <ActivityIndicator color="#CE7856" />
-          <Text style={styles.busyLabel}>要約しています</Text>
-        </View>
-      )}
+      <FlatList
+        data={recordings}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <RecordingListItem
+            recording={item}
+            onPress={() => router.push(`/detail/${item.id}`)}
+            onDelete={() => remove(item.id)}
+          />
+        )}
+        ListEmptyComponent={
+          isLoading ? null : (
+            <Text style={[typography.caption, styles.empty]}>
+              まだ記録がありません。{'\n'}下のボタンから話しはじめてみましょう。
+            </Text>
+          )
+        }
+      />
 
-      <ScrollView style={styles.logArea}>
-        {logs.map((line, index) => (
-          <Text key={index} style={styles.logLine} selectable>
-            {line}
-          </Text>
-        ))}
-      </ScrollView>
+      <View style={styles.footer} pointerEvents="box-none">
+        <Image
+          source={require('../assets/images/deco-bottom-left.png')}
+          style={styles.decoLeft}
+          resizeMode="contain"
+        />
+        <Image
+          source={require('../assets/images/deco-bottom-right.png')}
+          style={styles.decoRight}
+          resizeMode="contain"
+        />
+        <View style={styles.fab}>
+          <MicButton onPress={startRecording} />
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
 
+const FOOTER_HEIGHT = 200;
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FBF4E9', padding: 20 },
-  title: { fontSize: 24, fontWeight: '700', color: '#422B1E' },
-  status: { marginTop: 8, fontSize: 14, color: '#8E6F52' },
-  row: { flexDirection: 'row', gap: 8, marginTop: 16 },
-  button: {
-    flex: 1,
-    backgroundColor: '#CE7856',
-    paddingVertical: 14,
-    borderRadius: 24,
-    alignItems: 'center',
+  container: { flex: 1, backgroundColor: colors.bg },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 4,
+    paddingHorizontal: layout.screenPadding,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
-  buttonDisabled: { opacity: 0.35 },
-  buttonLabel: { color: '#FFFFFF', fontWeight: '700' },
-  busy: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16 },
-  busyLabel: { color: '#8E6F52' },
-  logArea: { flex: 1, marginTop: 16 },
-  logLine: { fontSize: 12, color: '#43302A', marginBottom: 6 },
+  headerLeaf: { width: 32, height: 55, marginTop: -4 },
+  headerTexts: { flex: 1 },
+  subtitle: { marginTop: 6 },
+  listContent: {
+    paddingHorizontal: layout.screenPadding,
+    paddingBottom: FOOTER_HEIGHT,
+  },
+  empty: { textAlign: 'center', marginTop: 40, lineHeight: 24 },
+  footer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: FOOTER_HEIGHT,
+  },
+  decoLeft: { position: 'absolute', left: 0, bottom: 0, width: 93, height: 195 },
+  decoRight: { position: 'absolute', right: 0, bottom: 0, width: 185, height: 160 },
+  fab: { position: 'absolute', alignSelf: 'center', bottom: 58 },
 });
