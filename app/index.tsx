@@ -94,7 +94,7 @@ export default function TopScreen() {
   );
 }
 
-const FOOTER_HEIGHT = 200;
+const FOOTER_HEIGHT = 215;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 16,
   },
-  headerLeaf: { width: 32, height: 55, marginTop: -4 },
+  headerLeaf: { width: 22, height: 70, marginTop: -8 },
   headerTexts: { flex: 1 },
   subtitle: { marginTop: 6 },
   listContent: {
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: FOOTER_HEIGHT,
   },
-  decoLeft: { position: 'absolute', left: 0, bottom: 0, width: 93, height: 195 },
-  decoRight: { position: 'absolute', right: 0, bottom: 0, width: 185, height: 160 },
+  decoLeft: { position: 'absolute', left: 4, bottom: 0, width: 88, height: 210 },
+  decoRight: { position: 'absolute', right: 0, bottom: 0, width: 190, height: 128 },
   fab: { position: 'absolute', alignSelf: 'center', bottom: 58 },
 });
