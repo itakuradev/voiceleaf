@@ -42,16 +42,13 @@ export default function TopScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <Image
-          source={require('../assets/images/leaf-title.png')}
-          style={styles.headerLeaf}
+          source={require('../assets/images/title.png')}
+          style={styles.titleImage}
           resizeMode="contain"
         />
-        <View style={styles.headerTexts}>
-          <Text style={typography.appTitle}>独り言要約</Text>
-          <Text style={[typography.caption, styles.subtitle]}>
-            話すだけで、頭の中をスッキリ整理。
-          </Text>
-        </View>
+        <Text style={[typography.caption, styles.subtitle]}>
+          話すだけで、頭の中をスッキリ整理。
+        </Text>
       </View>
 
       <FlatList
@@ -99,16 +96,13 @@ const FOOTER_HEIGHT = 215;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 4,
+    alignItems: 'center',
     paddingHorizontal: layout.screenPadding,
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingTop: 18,
+    paddingBottom: 18,
   },
-  headerLeaf: { width: 22, height: 70, marginTop: -8 },
-  headerTexts: { flex: 1 },
-  subtitle: { marginTop: 6 },
+  titleImage: { width: 300, height: 46 },
+  subtitle: { marginTop: 10 },
   listContent: {
     paddingHorizontal: layout.screenPadding,
     paddingBottom: FOOTER_HEIGHT,
