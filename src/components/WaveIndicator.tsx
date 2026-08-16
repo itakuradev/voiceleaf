@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, StyleSheet, View } from 'react-native';
 
 import { colors } from '@/theme/colors';
@@ -62,7 +62,7 @@ export function WaveIndicator({ mode }: Props) {
 
 /** 外側へ広がりながら消えるリング。 */
 function PulseRing({ active }: { active: boolean }) {
-  const progress = useRef(new Animated.Value(0)).current;
+  const [progress] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (!active) {
@@ -104,7 +104,7 @@ function PulseRing({ active }: { active: boolean }) {
 
 /** 縦棒が上下する波形。 */
 function WaveBars({ active }: { active: boolean }) {
-  const values = useRef(BAR_HEIGHTS.map(() => new Animated.Value(0.55))).current;
+  const [values] = useState(() => BAR_HEIGHTS.map(() => new Animated.Value(0.55)));
 
   useEffect(() => {
     if (!active) {

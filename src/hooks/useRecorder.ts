@@ -84,7 +84,9 @@ export function useRecorder() {
 
   // タイマーから最新の finish を呼べるようにする
   const finishRef = useRef(finish);
-  finishRef.current = finish;
+  useEffect(() => {
+    finishRef.current = finish;
+  }, [finish]);
 
   // 画面表示と同時に録音を開始する
   useEffect(() => {
